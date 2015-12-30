@@ -589,5 +589,9 @@ if(ENABLE_TESTING)
                        ${CMAKE_CURRENT_SOURCE_DIR}/qa_utils.cc
         TARGET_DEPS volk_sha256
     )
+    VOLK_ADD_TEST(volk_sha256_8u_hash_32u
+        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/qa_volk_sha256_8u_hash_32u.cc
+        TARGET_DEPS volk_sha256
+    )
 
 endif(ENABLE_TESTING)
