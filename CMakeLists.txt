@@ -99,7 +99,7 @@ if(NOT Boost_FOUND)
 endif()
 
 # Orc
-option(ENABLE_ORC "Enable Orc" True)
+option(ENABLE_ORC "Enable Orc" False)
 if(ENABLE_ORC)
   find_package(ORC)
 else(ENABLE_ORC)
