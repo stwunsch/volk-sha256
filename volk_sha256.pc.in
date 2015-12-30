@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+LV_CXXFLAGS=@LV_CXXFLAGS@
+
+
+Name: volk_sha256
+Description: VOLK: Vector Optimized Library of Kernels
+Requires:
+Version: @LIBVER@
+Libs: -L${libdir} -lvolk_sha256
+Cflags: -I${includedir} ${LV_CXXFLAGS}
