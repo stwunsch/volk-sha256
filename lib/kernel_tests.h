@@ -37,7 +37,8 @@ std::vector<volk_sha256_test_case_t> init_test_list(volk_sha256_test_params_t te
         //VOLK_PROFILE(volk_sha256_16i_x4_quad_max_star_16i, 1e-4, 0, 2046, 10000, &results, benchmark_mode, kernel_regex);
         // we need a puppet for this one
         //(VOLK_INIT_TEST(volk_sha256_32fc_s32f_x2_power_spectral_density_32f,   test_params))
-        (VOLK_INIT_TEST(volk_sha256_32f_null_32f, test_params))
+        //(VOLK_INIT_TEST(volk_sha256_32f_null_32f, test_params))
+        (VOLK_INIT_TEST(volk_sha256_8u_hash_32u, test_params))
         ;
 
     return test_cases;
