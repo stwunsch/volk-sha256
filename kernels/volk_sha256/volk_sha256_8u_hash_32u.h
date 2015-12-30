@@ -29,6 +29,7 @@
  * NOTE:
  * We suppose a little endian machine.
  * Reference: https://web.archive.org/web/20150315061807/http://csrc.nist.gov/groups/STM/cavp/documents/shs/sha256-384-512.pdf
+ * Check against sha256sum on a linux system. Be aware of the file ending character (sth like CR).
  */
 
 #ifndef INCLUDED_volk_sha256_8u_hash_32u_a_H
