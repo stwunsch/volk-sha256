@@ -43,6 +43,7 @@
 #define EPSILON_1(x)    ( ROTR(x, 6)  ^  ROTR(x, 11)  ^  ROTR(x, 25) )
 #define SIGMA_0(x)      ( ROTR(x, 7)  ^  ROTR(x, 18)  ^  (x >> 3) )
 #define SIGMA_1(x)      ( ROTR(x, 17) ^  ROTR(x, 19)  ^  (x >> 10) )
+#define SWAP_UINT32(x)  ( ((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24) )
 
 /* Process one block of 512 bits in the sha256 main loop */
 static inline void
@@ -61,7 +62,9 @@ sha256_process_block(uint32_t* hash, uint32_t* msg){
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
     // Calculate W
-    for (i = 0; i < 16; i++) W[i] = msg[i];
+    for (i = 0; i < 16; i++){
+        W[i] = SWAP_UINT32(msg[i]);
+    }
     for (i = 16; i < 64; i++) W[i] = SIGMA_1(W[i-2]) + W[i-7] + SIGMA_0(W[i-15]) + W[i-16];
 
     // Init a to h
@@ -104,9 +107,8 @@ sha256_process_block(uint32_t* hash, uint32_t* msg){
 static inline void
 volk_sha256_8u_hash_32u_generic(uint32_t* hash, const uint8_t* msg, unsigned int msg_len)
 {
-    /* INIT*/
+    /* INIT: Set initial hash */
 
-    // Set initial hash
     hash[0] = 0x6a09e667;
     hash[1] = 0xbb67ae85;
     hash[2] = 0x3c6ef372;
@@ -122,12 +124,11 @@ volk_sha256_8u_hash_32u_generic(uint32_t* hash, const uint8_t* msg, unsigned int
     unsigned int i;
     uint32_t* msg_block; // pointer to 512 bit blocks of input message
     for(i=0; i<N; i++){
-        printf("LOOP\n"); // FIXME
         msg_block = (uint32_t*) (msg + 64*i); // increment pointer to next multiple of 512 bits
         sha256_process_block(hash, msg_block); // process one main loop step
     }
 
-    /* PADDING: Process rest of bits (msg_len%64 bytes) after processing of all 512 bits blocks */
+    /* PADDING AND LAST HASH UPDATE: Process rest of bits (msg_len%64 bytes) after processing of all 512 bits blocks */
 
     const unsigned int R = msg_len % 64; // rest bytes from input message
     size_t alignment = volk_sha256_get_alignment(); // get system alignment
@@ -135,15 +136,15 @@ volk_sha256_8u_hash_32u_generic(uint32_t* hash, const uint8_t* msg, unsigned int
     uint8_t* msg_block_b = (uint8_t*) msg_block; // byte-wise pointer
 
     memcpy(msg_block_b, msg+N*64, R); // copy rest of message to intermediate buffer
-    msg_block_b[R] = 0x80; // add 0x80 (1 bit followed by zeros) to message
+    msg_block_b[R] = 0x80; // add 0x80 (1 followed by zeros) to message
 
     if(R<56){ // if at least 8 bytes are free up to 512 bits, then set last 64 bit here
-        for(i=R+1; i<56; i++) msg_block_b[R] = 0x00; // set rest up to last 8 byte to zero
+        for(i=R+1; i<56; i++) msg_block_b[i] = 0x00; // set rest up to last 8 byte to zero
     }
     else{ // otherwise start a new block
-        for(i=R+1; i<64; i++) msg_block_b[R] = 0x00; // set rest to zero
+        for(i=R+1; i<64; i++) msg_block_b[i] = 0x00; // set rest to zero
         sha256_process_block(hash, msg_block); // update hash
-        for(i=0; i<56; i++) msg_block_b[R] = 0x00; // set rest up to last 8 byte to zero
+        for(i=0; i<56; i++) msg_block_b[i] = 0x00; // set rest up to last 8 byte to zero
     }
 
     // write last 8 bytes with message length in bits in big endian format

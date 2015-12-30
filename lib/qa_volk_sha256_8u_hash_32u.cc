@@ -6,7 +6,7 @@
 
 int main(){
     // Init
-    char msg_char[] = "abc";
+    char msg_char[] = "abcd";
     std::cout << "Message (char): " << msg_char << std::endl;
 
     size_t msg_len = strlen(msg_char);
