@@ -89,10 +89,10 @@ sha256_process_block_generic(uint32_t* hash, const uint32_t* msg){
         d = c;
         c = b;
         b = a;
-		a = T1 + T2;
+        a = T1 + T2;
     }
 
-    // Get intermidiate hash
+    // Get intermediate hash
     hash[0] = a + hash[0];
     hash[1] = b + hash[1];
     hash[2] = c + hash[2];
@@ -193,6 +193,7 @@ sha256_process_block_sse(uint32_t* hash, const uint32_t* msg){
     h = hash[7];
 
     // Run sha256 compression function
+    // NOTE: here goes the SSE magic! All other code is untouched compared to the generic version.
     for(i=0; i<64; i++){
         T1 = h + EPSILON_1(e) + CH(e, f, g) + K[i] + W[i];
         T2 = EPSILON_0(a) + MAJ(a, b, c);
@@ -203,10 +204,10 @@ sha256_process_block_sse(uint32_t* hash, const uint32_t* msg){
         d = c;
         c = b;
         b = a;
-		a = T1 + T2;
+        a = T1 + T2;
     }
 
-    // Get intermidiate hash
+    // Get intermediate hash
     hash[0] = a + hash[0];
     hash[1] = b + hash[1];
     hash[2] = c + hash[2];
