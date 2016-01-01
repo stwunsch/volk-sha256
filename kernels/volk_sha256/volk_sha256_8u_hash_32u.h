@@ -46,6 +46,16 @@
 #define SIGMA_1(x)      ( ROTR(x, 17) ^  ROTR(x, 19)  ^  (x >> 10) )
 #define SWAP_UINT32(x)  ( ((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24) )
 
+static const uint32_t K[64] = {
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
+
 /* GENERIC: Single round in the sha256 main loop */
 #define	SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W, K) \
 T1 = h + EPSILON_1(e) + CH(e, f, g) + W + K;               \
@@ -56,19 +66,9 @@ h = T1 + T2
 /* GENERIC: Process one block of 512 bits in the sha256 main loop */
 static inline void
 sha256_process_block_generic(uint32_t* hash, const uint32_t* msg){
-    uint32_t W[16];
+    uint32_t W0, W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11, W12, W13, W14, W15;
     uint32_t T1, T2;
     uint32_t a, b, c, d, e, f, g, h;
-
-    static const uint32_t K[64] = {
-    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
     // Run sha256 compression function with included computation of W
 
@@ -82,7 +82,7 @@ sha256_process_block_generic(uint32_t* hash, const uint32_t* msg){
     g = hash[6];
     h = hash[7];
 
-    // Omit the loop form to increase performance
+    // Omit the loop implementation to increase performance
     // Loop form:
     /*
 
@@ -109,140 +109,140 @@ sha256_process_block_generic(uint32_t* hash, const uint32_t* msg){
 
     // Implement rounds explicitly
     // Start with first 16 rounds from 0 to 15
-    W[0] = SWAP_UINT32(msg[0]);
-    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W[0], K[0]);
-    W[1] = SWAP_UINT32(msg[1]);
-    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W[1], K[1]);
-    W[2] = SWAP_UINT32(msg[2]);
-    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W[2], K[2]);
-    W[3] = SWAP_UINT32(msg[3]);
-    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W[3], K[3]);
-    W[4] = SWAP_UINT32(msg[4]);
-    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W[4], K[4]);
-    W[5] = SWAP_UINT32(msg[5]);
-    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W[5], K[5]);
-    W[6] = SWAP_UINT32(msg[6]);
-    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W[6], K[6]);
-    W[7] = SWAP_UINT32(msg[7]);
-    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W[7], K[7]);
-    W[8] = SWAP_UINT32(msg[8]);
-    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W[8], K[8]);
-    W[9] = SWAP_UINT32(msg[9]);
-    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W[9], K[9]);
-    W[10] = SWAP_UINT32(msg[10]);
-    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W[10], K[10]);
-    W[11] = SWAP_UINT32(msg[11]);
-    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W[11], K[11]);
-    W[12] = SWAP_UINT32(msg[12]);
-    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W[12], K[12]);
-    W[13] = SWAP_UINT32(msg[13]);
-    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W[13], K[13]);
-    W[14] = SWAP_UINT32(msg[14]);
-    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W[14], K[14]);
-    W[15] = SWAP_UINT32(msg[15]);
-    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W[15], K[15]);
+    W0 = SWAP_UINT32(msg[0]);
+    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W0, K[0]);
+    W1 = SWAP_UINT32(msg[1]);
+    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W1, K[1]);
+    W2 = SWAP_UINT32(msg[2]);
+    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W2, K[2]);
+    W3 = SWAP_UINT32(msg[3]);
+    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W3, K[3]);
+    W4 = SWAP_UINT32(msg[4]);
+    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W4, K[4]);
+    W5 = SWAP_UINT32(msg[5]);
+    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W5, K[5]);
+    W6 = SWAP_UINT32(msg[6]);
+    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W6, K[6]);
+    W7 = SWAP_UINT32(msg[7]);
+    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W7, K[7]);
+    W8 = SWAP_UINT32(msg[8]);
+    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W8, K[8]);
+    W9 = SWAP_UINT32(msg[9]);
+    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W9, K[9]);
+    W10 = SWAP_UINT32(msg[10]);
+    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W10, K[10]);
+    W11 = SWAP_UINT32(msg[11]);
+    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W11, K[11]);
+    W12 = SWAP_UINT32(msg[12]);
+    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W12, K[12]);
+    W13 = SWAP_UINT32(msg[13]);
+    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W13, K[13]);
+    W14 = SWAP_UINT32(msg[14]);
+    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W14, K[14]);
+    W15 = SWAP_UINT32(msg[15]);
+    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W15, K[15]);
 
     // Second 16 rounds from 16 to 31
-    W[0] = SIGMA_1(W[14]) + W[9] + SIGMA_0(W[1]) + W[0];
-    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W[0], K[16]);
-    W[1] = SIGMA_1(W[15]) + W[10] + SIGMA_0(W[2]) + W[1];
-    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W[1], K[17]);
-    W[2] = SIGMA_1(W[0]) + W[11] + SIGMA_0(W[3]) + W[2];
-    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W[2], K[18]);
-    W[3] = SIGMA_1(W[1]) + W[12] + SIGMA_0(W[4]) + W[3];
-    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W[3], K[19]);
-    W[4] = SIGMA_1(W[2]) + W[13] + SIGMA_0(W[5]) + W[4];
-    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W[4], K[20]);
-    W[5] = SIGMA_1(W[3]) + W[14] + SIGMA_0(W[6]) + W[5];
-    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W[5], K[21]);
-    W[6] = SIGMA_1(W[4]) + W[15] + SIGMA_0(W[7]) + W[6];
-    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W[6], K[22]);
-    W[7] = SIGMA_1(W[5]) + W[0] + SIGMA_0(W[8]) + W[7];
-    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W[7], K[23]);
-    W[8] = SIGMA_1(W[6]) + W[1] + SIGMA_0(W[9]) + W[8];
-    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W[8], K[24]);
-    W[9] = SIGMA_1(W[7]) + W[2] + SIGMA_0(W[10]) + W[9];
-    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W[9], K[25]);
-    W[10] = SIGMA_1(W[8]) + W[3] + SIGMA_0(W[11]) + W[10];
-    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W[10], K[26]);
-    W[11] = SIGMA_1(W[9]) + W[4] + SIGMA_0(W[12]) + W[11];
-    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W[11], K[27]);
-    W[12] = SIGMA_1(W[10]) + W[5] + SIGMA_0(W[13]) + W[12];
-    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W[12], K[28]);
-    W[13] = SIGMA_1(W[11]) + W[6] + SIGMA_0(W[14]) + W[13];
-    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W[13], K[29]);
-    W[14] = SIGMA_1(W[12]) + W[7] + SIGMA_0(W[15]) + W[14];
-    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W[14], K[30]);
-    W[15] = SIGMA_1(W[13]) + W[8] + SIGMA_0(W[0]) + W[15];
-    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W[15], K[31]);
+    W0 = SIGMA_1(W14) + W9 + SIGMA_0(W1) + W0;
+    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W0, K[16]);
+    W1 = SIGMA_1(W15) + W10 + SIGMA_0(W2) + W1;
+    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W1, K[17]);
+    W2 = SIGMA_1(W0) + W11 + SIGMA_0(W3) + W2;
+    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W2, K[18]);
+    W3 = SIGMA_1(W1) + W12 + SIGMA_0(W4) + W3;
+    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W3, K[19]);
+    W4 = SIGMA_1(W2) + W13 + SIGMA_0(W5) + W4;
+    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W4, K[20]);
+    W5 = SIGMA_1(W3) + W14 + SIGMA_0(W6) + W5;
+    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W5, K[21]);
+    W6 = SIGMA_1(W4) + W15 + SIGMA_0(W7) + W6;
+    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W6, K[22]);
+    W7 = SIGMA_1(W5) + W0 + SIGMA_0(W8) + W7;
+    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W7, K[23]);
+    W8 = SIGMA_1(W6) + W1 + SIGMA_0(W9) + W8;
+    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W8, K[24]);
+    W9 = SIGMA_1(W7) + W2 + SIGMA_0(W10) + W9;
+    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W9, K[25]);
+    W10 = SIGMA_1(W8) + W3 + SIGMA_0(W11) + W10;
+    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W10, K[26]);
+    W11 = SIGMA_1(W9) + W4 + SIGMA_0(W12) + W11;
+    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W11, K[27]);
+    W12 = SIGMA_1(W10) + W5 + SIGMA_0(W13) + W12;
+    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W12, K[28]);
+    W13 = SIGMA_1(W11) + W6 + SIGMA_0(W14) + W13;
+    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W13, K[29]);
+    W14 = SIGMA_1(W12) + W7 + SIGMA_0(W15) + W14;
+    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W14, K[30]);
+    W15 = SIGMA_1(W13) + W8 + SIGMA_0(W0) + W15;
+    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W15, K[31]);
 
     // Third 16 rounds from 32 to 47
-    W[0] = SIGMA_1(W[14]) + W[9] + SIGMA_0(W[1]) + W[0];
-    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W[0], K[32]);
-    W[1] = SIGMA_1(W[15]) + W[10] + SIGMA_0(W[2]) + W[1];
-    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W[1], K[33]);
-    W[2] = SIGMA_1(W[0]) + W[11] + SIGMA_0(W[3]) + W[2];
-    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W[2], K[34]);
-    W[3] = SIGMA_1(W[1]) + W[12] + SIGMA_0(W[4]) + W[3];
-    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W[3], K[35]);
-    W[4] = SIGMA_1(W[2]) + W[13] + SIGMA_0(W[5]) + W[4];
-    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W[4], K[36]);
-    W[5] = SIGMA_1(W[3]) + W[14] + SIGMA_0(W[6]) + W[5];
-    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W[5], K[37]);
-    W[6] = SIGMA_1(W[4]) + W[15] + SIGMA_0(W[7]) + W[6];
-    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W[6], K[38]);
-    W[7] = SIGMA_1(W[5]) + W[0] + SIGMA_0(W[8]) + W[7];
-    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W[7], K[39]);
-    W[8] = SIGMA_1(W[6]) + W[1] + SIGMA_0(W[9]) + W[8];
-    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W[8], K[40]);
-    W[9] = SIGMA_1(W[7]) + W[2] + SIGMA_0(W[10]) + W[9];
-    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W[9], K[41]);
-    W[10] = SIGMA_1(W[8]) + W[3] + SIGMA_0(W[11]) + W[10];
-    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W[10], K[42]);
-    W[11] = SIGMA_1(W[9]) + W[4] + SIGMA_0(W[12]) + W[11];
-    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W[11], K[43]);
-    W[12] = SIGMA_1(W[10]) + W[5] + SIGMA_0(W[13]) + W[12];
-    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W[12], K[44]);
-    W[13] = SIGMA_1(W[11]) + W[6] + SIGMA_0(W[14]) + W[13];
-    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W[13], K[45]);
-    W[14] = SIGMA_1(W[12]) + W[7] + SIGMA_0(W[15]) + W[14];
-    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W[14], K[46]);
-    W[15] = SIGMA_1(W[13]) + W[8] + SIGMA_0(W[0]) + W[15];
-    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W[15], K[47]);
+    W0 = SIGMA_1(W14) + W9 + SIGMA_0(W1) + W0;
+    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W0, K[32]);
+    W1 = SIGMA_1(W15) + W10 + SIGMA_0(W2) + W1;
+    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W1, K[33]);
+    W2 = SIGMA_1(W0) + W11 + SIGMA_0(W3) + W2;
+    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W2, K[34]);
+    W3 = SIGMA_1(W1) + W12 + SIGMA_0(W4) + W3;
+    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W3, K[35]);
+    W4 = SIGMA_1(W2) + W13 + SIGMA_0(W5) + W4;
+    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W4, K[36]);
+    W5 = SIGMA_1(W3) + W14 + SIGMA_0(W6) + W5;
+    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W5, K[37]);
+    W6 = SIGMA_1(W4) + W15 + SIGMA_0(W7) + W6;
+    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W6, K[38]);
+    W7 = SIGMA_1(W5) + W0 + SIGMA_0(W8) + W7;
+    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W7, K[39]);
+    W8 = SIGMA_1(W6) + W1 + SIGMA_0(W9) + W8;
+    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W8, K[40]);
+    W9 = SIGMA_1(W7) + W2 + SIGMA_0(W10) + W9;
+    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W9, K[41]);
+    W10 = SIGMA_1(W8) + W3 + SIGMA_0(W11) + W10;
+    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W10, K[42]);
+    W11 = SIGMA_1(W9) + W4 + SIGMA_0(W12) + W11;
+    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W11, K[43]);
+    W12 = SIGMA_1(W10) + W5 + SIGMA_0(W13) + W12;
+    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W12, K[44]);
+    W13 = SIGMA_1(W11) + W6 + SIGMA_0(W14) + W13;
+    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W13, K[45]);
+    W14 = SIGMA_1(W12) + W7 + SIGMA_0(W15) + W14;
+    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W14, K[46]);
+    W15 = SIGMA_1(W13) + W8 + SIGMA_0(W0) + W15;
+    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W15, K[47]);
 
     // Fourth 16 rounds from 48 to 63
-    W[0] = SIGMA_1(W[14]) + W[9] + SIGMA_0(W[1]) + W[0];
-    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W[0], K[48]);
-    W[1] = SIGMA_1(W[15]) + W[10] + SIGMA_0(W[2]) + W[1];
-    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W[1], K[49]);
-    W[2] = SIGMA_1(W[0]) + W[11] + SIGMA_0(W[3]) + W[2];
-    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W[2], K[50]);
-    W[3] = SIGMA_1(W[1]) + W[12] + SIGMA_0(W[4]) + W[3];
-    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W[3], K[51]);
-    W[4] = SIGMA_1(W[2]) + W[13] + SIGMA_0(W[5]) + W[4];
-    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W[4], K[52]);
-    W[5] = SIGMA_1(W[3]) + W[14] + SIGMA_0(W[6]) + W[5];
-    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W[5], K[53]);
-    W[6] = SIGMA_1(W[4]) + W[15] + SIGMA_0(W[7]) + W[6];
-    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W[6], K[54]);
-    W[7] = SIGMA_1(W[5]) + W[0] + SIGMA_0(W[8]) + W[7];
-    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W[7], K[55]);
-    W[8] = SIGMA_1(W[6]) + W[1] + SIGMA_0(W[9]) + W[8];
-    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W[8], K[56]);
-    W[9] = SIGMA_1(W[7]) + W[2] + SIGMA_0(W[10]) + W[9];
-    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W[9], K[57]);
-    W[10] = SIGMA_1(W[8]) + W[3] + SIGMA_0(W[11]) + W[10];
-    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W[10], K[58]);
-    W[11] = SIGMA_1(W[9]) + W[4] + SIGMA_0(W[12]) + W[11];
-    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W[11], K[59]);
-    W[12] = SIGMA_1(W[10]) + W[5] + SIGMA_0(W[13]) + W[12];
-    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W[12], K[60]);
-    W[13] = SIGMA_1(W[11]) + W[6] + SIGMA_0(W[14]) + W[13];
-    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W[13], K[61]);
-    W[14] = SIGMA_1(W[12]) + W[7] + SIGMA_0(W[15]) + W[14];
-    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W[14], K[62]);
-    W[15] = SIGMA_1(W[13]) + W[8] + SIGMA_0(W[0]) + W[15];
-    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W[15], K[63]);
+    W0 = SIGMA_1(W14) + W9 + SIGMA_0(W1) + W0;
+    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W0, K[48]);
+    W1 = SIGMA_1(W15) + W10 + SIGMA_0(W2) + W1;
+    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W1, K[49]);
+    W2 = SIGMA_1(W0) + W11 + SIGMA_0(W3) + W2;
+    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W2, K[50]);
+    W3 = SIGMA_1(W1) + W12 + SIGMA_0(W4) + W3;
+    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W3, K[51]);
+    W4 = SIGMA_1(W2) + W13 + SIGMA_0(W5) + W4;
+    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W4, K[52]);
+    W5 = SIGMA_1(W3) + W14 + SIGMA_0(W6) + W5;
+    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W5, K[53]);
+    W6 = SIGMA_1(W4) + W15 + SIGMA_0(W7) + W6;
+    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W6, K[54]);
+    W7 = SIGMA_1(W5) + W0 + SIGMA_0(W8) + W7;
+    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W7, K[55]);
+    W8 = SIGMA_1(W6) + W1 + SIGMA_0(W9) + W8;
+    SHA256_ROUND_GENERIC(a, b, c, d, e, f, g, h, W8, K[56]);
+    W9 = SIGMA_1(W7) + W2 + SIGMA_0(W10) + W9;
+    SHA256_ROUND_GENERIC(h, a, b, c, d, e, f, g, W9, K[57]);
+    W10 = SIGMA_1(W8) + W3 + SIGMA_0(W11) + W10;
+    SHA256_ROUND_GENERIC(g, h, a, b, c, d, e, f, W10, K[58]);
+    W11 = SIGMA_1(W9) + W4 + SIGMA_0(W12) + W11;
+    SHA256_ROUND_GENERIC(f, g, h, a, b, c, d, e, W11, K[59]);
+    W12 = SIGMA_1(W10) + W5 + SIGMA_0(W13) + W12;
+    SHA256_ROUND_GENERIC(e, f, g, h, a, b, c, d, W12, K[60]);
+    W13 = SIGMA_1(W11) + W6 + SIGMA_0(W14) + W13;
+    SHA256_ROUND_GENERIC(d, e, f, g, h, a, b, c, W13, K[61]);
+    W14 = SIGMA_1(W12) + W7 + SIGMA_0(W15) + W14;
+    SHA256_ROUND_GENERIC(c, d, e, f, g, h, a, b, W14, K[62]);
+    W15 = SIGMA_1(W13) + W8 + SIGMA_0(W0) + W15;
+    SHA256_ROUND_GENERIC(b, c, d, e, f, g, h, a, W15, K[63]);
 
     // Get intermediate hash
     hash[0] += a;
@@ -317,16 +317,6 @@ static inline void
 sha256_process_block_sse(uint32_t* hash, const uint32_t* msg){
     uint32_t a, b, c, d, e, f, g, h, T1, T2, W[64];
     unsigned int i;
-
-    static const uint32_t K[64] = {
-    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
     // Calculate W
     for (i = 0; i < 16; i++){
